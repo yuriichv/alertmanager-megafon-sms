@@ -1,0 +1,66 @@
+= alertmanager-megafon-sms
+
+== Description
+alertmanager[https://github.com/prometheus/alertmanager] webhook service, forwarding alerts to megafon[https://megafon.ru] sms gateway (A2PSMS).
+Sends message "Alert ${alertname}"
+
+== Install
+1. Get source
+[source, bash]
+git clone  https://github.com/yuriichv/alertmanager-megafon-sms
+
+2. Build
+[source, bash]
+./build
+
+get executable in alertmanager-megafon-sms/bin
+
+== Usage
+
+.run example
+[source, bash]
+env SMS_GW_URL="https://a2p-api.megalabs.ru/sms/v1/sms" SMS_TO="+79991111111,+79998888888" SMS_USER="user" SMS_PASSWORD="password" SMS_FROM="SENDER_HERE" ./alertmanager-megafon-sms
+
+=== Configuring
+
+====
+All configurations are passed to service via EVN accroding to link:12 factor app[https://12factor.net/config]
+List of env see in main.go
+
+====Prometheus and alertmanager configuration examples
+.prometheus.yaml
+[source, yaml]
+  - job_name: 'ya.ru'
+    metrics_path: '/probe'
+    params:
+      module: ["http_2xx"]  # Look for a HTTP 200 response.
+      target: ["https://ya.ru"]
+    static_configs:
+      - targets: ['localhost:9115']
+    relabel_configs:
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: node
+        replacement: ya.ru
+      - target_label: app
+        replacement: yandex
+
+.aletrs.yaml (rules)
+[source, yaml]
+- name: YaRuServiceDown
+  rules:
+  - alert: YaRuServiceDown
+    expr: up{job="ya.ru"} == 0 or probe_success{job="ya.ru"} == 0
+
+
+.alertmanager.yaml
+[source, yaml]
+routes:
+- match:
+    alertname: YaRuServiceDown
+  receiver: 'megafon-sms'
+receivers:
+- name: 'megafon-sms'
+  webhook_configs:
+  - send_resolved: false
+    url: "http://localhost:9097"

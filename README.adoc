@@ -1,7 +1,8 @@
 = alertmanager-megafon-sms
 
 == Description
-alertmanager[https://github.com/prometheus/alertmanager] webhook service, forwarding alerts to megafon[https://megafon.ru] sms gateway (A2PSMS).
+https://github.com/prometheus/alertmanager[alertmanager] webhook service, forwarding alerts to https://megafon.ru[megafon] sms gateway (A2PSMS).  
+
 Sends message "Alert ${alertname}"
 
 == Install
@@ -23,11 +24,12 @@ env SMS_GW_URL="https://a2p-api.megalabs.ru/sms/v1/sms" SMS_TO="+79991111111,+79
 
 === Configuring
 
-====
-All configurations are passed to service via EVN accroding to link:12 factor app[https://12factor.net/config]
-List of env see in main.go
+All configurations are passed to service via EVN accroding to https://12factor.net/config[12 factor app]  
 
-====Prometheus and alertmanager configuration examples
+List of env see in link:main.go[]
+
+==== Prometheus and alertmanager configuration examples
+
 .prometheus.yaml
 [source, yaml]
   - job_name: 'ya.ru'

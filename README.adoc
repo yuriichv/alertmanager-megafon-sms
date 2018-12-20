@@ -5,6 +5,8 @@ https://github.com/prometheus/alertmanager[alertmanager] webhook service, forwar
 
 Uses CommonLables to fill message body. Representation key:value. Default _alertname_ lable.
 
+Listens /sms path, i.e. http://[host]:[port]/sms
+
 == Install
 1. Get source
 [source, bash]
@@ -65,4 +67,4 @@ receivers:
 - name: 'megafon-sms'
   webhook_configs:
   - send_resolved: false
-    url: "http://localhost:9097"
+    url: "http://localhost:9097/sms"

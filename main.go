@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
-
-	//	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -20,11 +18,12 @@ var (
 	port        = getEnv("SMS_PORT", "9097")                     //listern port
 	gwUrl       = getEnv("SMS_GW_URL", "https://localhost:7443") //sms gateway url
 	smsFrom     = getEnv("SMS_FROM", "VGR ID")                   //FROM
-	smsTo       = getEnv("SMS_TO", "00000000000,11111111111")    //phone numbers, split by ","
+	smsTo       = getEnv("SMS_TO", "")                           //phone numbers, split by ",". Example: SMS_TO="+79991112233,79183334455"
 	insecure    = getEnv("SMS_INSECURE", "false")                //disable tls cert check
 	smsUser     = getEnv("SMS_USER", "")                         //username for basic auth
 	smsPassword = getEnv("SMS_PASSWORD", "")                     //password for basic auth
-	logLevel    = getEnv("SMS_LOG_LEVEL", "info")
+	logLevel    = getEnv("SMS_LOG_LEVEL", "info")                //log level: debug, info, error
+	lables      = getEnv("SMS_LABLES", "alertname")              //wich CommonLabels pass to sms message. split by ",". Example: SMS_LABLES="alertname,message,node"
 )
 
 func getEnv(key, def string) string {
@@ -61,8 +60,12 @@ type Reply struct {
 }
 
 func makeMessage(data template.Data) string {
-	//TODO: можно добавить все CommonLables в формате key:value
-	return "Alert: " + data.GroupLabels["alertname"]
+	result := "Alert!"
+	lablesSlice := strings.Split(lables, ",")
+	for _, lable := range lablesSlice {
+		result += " " + lable + ":" + data.CommonLabels[lable]
+	}
+	return result
 }
 
 func sendSms(smsTo int, smsMessage string, statusChan chan int) {
@@ -128,17 +131,19 @@ func webhookHandler(w http.ResponseWriter, r *http.Request) {
 	statusChan := make(chan int)
 	returnStatus := http.StatusOK
 
+	goroutineCounter := 0
 	smsToSlice := strings.Split(smsTo, ",")
 	for _, phone := range smsToSlice {
 		if n, err := strconv.Atoi(phone); err != nil {
-			log.Error("%v", err)
+			log.Errorf("Incorrect SMS_TO parameter. %v", err)
 			returnStatus = http.StatusInternalServerError
 		} else {
 			go sendSms(n, smsMessage, statusChan)
+			goroutineCounter++
 		}
 	}
 	//wait for answers or timeout
-	for i := 0; i < len(smsToSlice); i++ {
+	for i := 0; i < goroutineCounter; i++ {
 		select {
 		case state := <-statusChan:
 			if state != 0 {

@@ -3,7 +3,7 @@
 == Description
 https://github.com/prometheus/alertmanager[alertmanager] webhook service, forwarding alerts to https://megafon.ru[megafon] sms gateway (A2PSMS).  
 
-Sends message "Alert ${alertname}"
+Uses CommonLables to fill message body. Representation key:value. Default _alertname_ lable.
 
 == Install
 1. Get source

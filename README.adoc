@@ -7,6 +7,8 @@ Uses CommonLables to fill message body. Representation key:value. Default _alert
 
 Listens /sms path, i.e. http://[host]:[port]/sms
 
+Metrics: /metrics endpoint.
+
 == Install
 1. Get source
 [source, bash]

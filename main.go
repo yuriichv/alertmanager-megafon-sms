@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/prometheus/alertmanager/template"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -60,7 +61,7 @@ type Reply struct {
 }
 
 func makeMessage(data template.Data) string {
-	result := "Alert!"
+	result := ""
 	lablesSlice := strings.Split(lables, ",")
 	for _, lable := range lablesSlice {
 		result += " " + lable + ":" + data.CommonLabels[lable]
@@ -178,6 +179,7 @@ func main() {
 	log.Infof("Init parameters: SMS_GW_URL=%v, SMS_FROM=%v, SMS_TO=%v, SMS_INSECURE=%v", gwUrl, smsFrom, smsTo, insecure)
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: insecure == "true"}
 	http.HandleFunc("/sms", webhookHandler)
+	http.Handle("/metrics", promhttp.Handler())
 	log.Printf("Listetning on port %v", port)
 	log.Fatalln(http.ListenAndServe(":"+port, nil))
 }

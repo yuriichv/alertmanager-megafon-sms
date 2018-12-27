@@ -110,7 +110,7 @@ func sendSms(smsTo int, smsMessage string, statusChan chan int) {
 		statusChan <- 1
 		return
 	}
-	log.Info("sms to %v sent. id %v", smsTo, reply.Result.Msg_id)
+	log.Infof("sms to %v sent. id %v", smsTo, reply.Result.Msg_id)
 	statusChan <- 0
 	return
 }
@@ -118,7 +118,7 @@ func sendSms(smsTo int, smsMessage string, statusChan chan int) {
 func webhookHandler(w http.ResponseWriter, r *http.Request) {
 	var data template.Data
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		log.Error("%v", err)
+		log.Errorf("%v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -180,6 +180,6 @@ func main() {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: insecure == "true"}
 	http.HandleFunc("/sms", webhookHandler)
 	http.Handle("/metrics", promhttp.Handler())
-	log.Printf("Listetning on port %v", port)
+	log.Printf("Listetning on port %v. Endpoints: /sms, /metrics", port)
 	log.Fatalln(http.ListenAndServe(":"+port, nil))
 }

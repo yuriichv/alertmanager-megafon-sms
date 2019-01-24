@@ -61,7 +61,7 @@ type Reply struct {
 }
 
 func makeMessage(data template.Data) string {
-	result := ""
+	result := data.Status + "."
 	lablesSlice := strings.Split(lables, ",")
 	for _, lable := range lablesSlice {
 		result += " " + lable + ":" + data.CommonLabels[lable]

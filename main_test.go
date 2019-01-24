@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+
+	"github.com/prometheus/alertmanager/template"
 )
 
 var (
@@ -31,6 +34,18 @@ var (
 }
 `
 )
+
+func TestMakeMessage(t *testing.T) {
+	var data template.Data
+	if err := json.NewDecoder(bytes.NewBufferString(alertmanagerMessage)).Decode(&data); err != nil {
+		t.Fatalf("%v", err)
+	}
+	expected := "firing. alertname:DenyOfService"
+	msg := makeMessage(data)
+	if strings.Compare(msg, expected) != 0 {
+		t.Fatalf("Expected: \"%v\", got: \"%v\"", expected, msg)
+	}
+}
 
 func TestSendSms(t *testing.T) {
 	megafonServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -122,7 +122,7 @@ func webhookHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	log.Infof("alert recieved: %v", data.GroupLabels["alertname"])
+	log.Infof("alert recieved: %v. Status: %v", data.GroupLabels["alertname"], data.Status)
 	if log.GetLevel() == log.DebugLevel {
 		d, _ := json.Marshal(data)
 		log.Debugf("full request: %v", string(d))

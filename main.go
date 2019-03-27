@@ -80,10 +80,12 @@ func sendSms(smsTo int, smsMessage string, statusChan chan int) {
 	}
 	req.SetBasicAuth(smsUser, smsPassword)
 	req.Header.Set("Content-type", "application/json")
-	client := http.Client{}
+	client := http.Client{Timeout: time.Second * 50}
 
 	log.Debugf("Sending request to sms gateway: %v", req)
 	resp, err := client.Do(req)
+	defer resp.Body.Close()
+
 	if err != nil {
 		log.Errorf("%v", err)
 		statusChan <- 1
@@ -97,7 +99,6 @@ func sendSms(smsTo int, smsMessage string, statusChan chan int) {
 	}
 
 	var reply Reply
-	defer resp.Body.Close()
 	if err := json.NewDecoder(resp.Body).Decode(&reply); err != nil {
 		log.Errorf("Error %v parsing reply %+v", err, resp)
 		statusChan <- 1

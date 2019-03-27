@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -16,6 +18,8 @@ import (
 )
 
 var (
+	sha1ver     string
+	buildTime   string
 	port        = getEnv("SMS_PORT", "9097")                     //listern port
 	gwUrl       = getEnv("SMS_GW_URL", "https://localhost:7443") //sms gateway url
 	smsFrom     = getEnv("SMS_FROM", "VGR ID")                   //FROM
@@ -25,6 +29,7 @@ var (
 	smsPassword = getEnv("SMS_PASSWORD", "")                     //password for basic auth
 	logLevel    = getEnv("SMS_LOG_LEVEL", "info")                //log level: debug, info, error
 	lables      = getEnv("SMS_LABLES", "alertname")              //wich CommonLabels pass to sms message. split by ",". Example: SMS_LABLES="alertname,message,node"
+	cmdFlag     bool
 )
 
 func getEnv(key, def string) string {
@@ -58,6 +63,15 @@ type Result struct {
 
 type Reply struct {
 	Result Result `json:"result"`
+}
+
+func parseCmdLine() {
+	flag.BoolVar(&cmdFlag, "version", false, "print version")
+	flag.Parse()
+	if cmdFlag {
+		fmt.Printf("Build on %s from sha1 %s\n", buildTime, sha1ver)
+		os.Exit(0)
+	}
 }
 
 func makeMessage(data template.Data) string {
@@ -177,7 +191,9 @@ func main() {
 	// log.SetFormatter(&log.JSONFormatter{})
 	log.SetOutput(os.Stdout)
 
-	log.Infof("Init parameters: SMS_GW_URL=%v, SMS_FROM=%v, SMS_TO=%v, SMS_INSECURE=%v", gwUrl, smsFrom, smsTo, insecure)
+	parseCmdLine()
+
+	log.Infof("Version=%v buildTime=%v \nInit parameters: SMS_GW_URL=%v, SMS_FROM=%v, SMS_TO=%v, SMS_INSECURE=%v", sha1ver, buildTime, gwUrl, smsFrom, smsTo, insecure)
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: insecure == "true"}
 	http.HandleFunc("/sms", webhookHandler)
 	http.Handle("/metrics", promhttp.Handler())

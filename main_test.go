@@ -33,6 +33,10 @@ var (
   ]
 }
 `
+
+	megafonGoodReply      = `{"result": {"status": {"code": 0, "description": "ok"},"msg_id": "124343"}}`
+	megafonBadCodeReply   = `{"result": {"status": {"code": 2, "description": "code 2 test reply"},"msg_id": "124344"}}`
+	megafonBadFormatReply = `{"result": {"status": {"cod": 1, "description": "corrupted code"},"msge_id": "124345"}}`
 )
 
 func TestMakeMessage(t *testing.T) {
@@ -47,23 +51,43 @@ func TestMakeMessage(t *testing.T) {
 	}
 }
 
+func DoTestSendSms() {
+
+}
+
 func TestSendSms(t *testing.T) {
+	var tests = []struct {
+		args string
+		want int
+	}{
+		{args: "megafonGoodReply", want: 0},
+		{args: "megafonBadFormatReply", want: 1},
+		{args: "megafonBadCodeReply", want: 1},
+	}
 	megafonServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		megafonReplies := make(map[string]string)
+		megafonReplies["megafonGoodReply"] = megafonGoodReply
+		megafonReplies["megafonBadCodeReply"] = megafonBadCodeReply
+		megafonReplies["megafonBadFormatReply"] = megafonBadFormatReply
+
 		var req Request
 		decoder := json.NewDecoder(r.Body)
 		decoder.DisallowUnknownFields()
 		if err := decoder.Decode(&req); err != nil {
 			t.Error(err)
 		}
-		megafonReply := []byte(`{"result": {"status": {"code": 0, "description": "ok"},"msg_id": "124343"}}`)
-		w.Write(megafonReply)
+		w.Write([]byte(megafonReplies[req.Message]))
 	}))
 	defer megafonServer.Close()
 	gwUrl = megafonServer.URL
 	ch := make(chan int)
-	go sendSms(79261238212, "Это тест", ch)
-	if ok := <-ch; ok != 0 {
-		t.Fail()
+
+	for _, v := range tests {
+		go sendSms(79261238212, v.args, ch)
+		if ok := <-ch; ok != v.want {
+			t.Errorf("sendSms(%s) returned %v, expected %v", v.args, ok, v.want)
+			//t.Fail()
+		}
 	}
 }
 

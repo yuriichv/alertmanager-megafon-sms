@@ -52,7 +52,7 @@ type Payload struct {
 }
 type Status struct {
 	Payload     []Payload `json:payload`
-	Code        int       `json:"code"`
+	Code        int       `json:"code,omitempty"`
 	Description string    `json:"description"`
 }
 
@@ -98,13 +98,16 @@ func sendSms(smsTo int, smsMessage string, statusChan chan int) {
 
 	log.Debugf("Sending request to sms gateway: %v", req)
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 
 	if err != nil {
 		log.Errorf("%v", err)
 		statusChan <- 1
 		return
 	}
+
+	defer resp.Body.Close()
+
+	log.Debugf("Server reply: %+v", resp)
 
 	if resp.StatusCode != http.StatusOK {
 		log.Errorf("Server reply: %+v", resp)
@@ -113,11 +116,14 @@ func sendSms(smsTo int, smsMessage string, statusChan chan int) {
 	}
 
 	var reply Reply
+	reply.Result.Status.Code = -1 //for default value
 	if err := json.NewDecoder(resp.Body).Decode(&reply); err != nil {
 		log.Errorf("Error %v parsing reply %+v", err, resp)
 		statusChan <- 1
 		return
 	}
+
+	log.Debugf("Server reply body: %+v", reply)
 
 	if reply.Result.Status.Code != 0 {
 		r, _ := json.Marshal(reply)
